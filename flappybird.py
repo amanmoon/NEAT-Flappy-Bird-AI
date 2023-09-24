@@ -107,7 +107,7 @@ class Base:
         
         return base_image,self.x,self.upper_height
     def colide(self,bird):
-        if bird.y>(self.upper_height)-bird.img.get_height() or bird.y<0:
+        if bird.height>(self.upper_height)-bird.img.get_height() or bird.height <0:
             return True
         
 def create_window(screen,bird,pipe,base):
@@ -132,11 +132,11 @@ def main():
     screen = pygame.display.set_mode((screen_width,screen_height))
     clock=pygame.time.Clock()
     running=True
-    
+             
     while running:
         clock.tick(120)
         create_window(screen,bird,pipe,base)
-        if pipe.colide(bird) or base.colide(bird):
+        if pipe.colide(bird) or  base.colide(bird):
             pygame.quit()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
