@@ -167,10 +167,10 @@ def start_menu(screen,bird,base):
 
         clock.tick(FRAMERATE) 
         
-        start_text_rect=start_text.get_rect()
-        start_text_rect.center=(screen_width // 2,screen_height // 2)
+        start_text_rect = start_text.get_rect()
+        start_text_rect.center = (screen_width // 2,screen_height // 2)
         
-        base_img,x_base,y_base=base.move()
+        base_img,x_base,y_base = base.move()
         bird.fliping_animation()
         screen.blit(bg_image,(0,0))
         screen.blit(bird.img,((screen_width/2) - bird_position_offset,screen_height / 2))
