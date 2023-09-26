@@ -160,7 +160,7 @@ def start_menu(screen,bird,base):
         base_img,x_base,y_base=base.move()
         bird.fliping_animation()
         screen.blit(bg_image,(0,0))
-        screen.blit(bird.img,(bird.x,bird.y))
+        screen.blit(bird.img,((screen_width/2)-bird_position_offset,screen_height/2))
         screen.blit(base_img,(x_base,y_base))
         screen.blit(base_img,(x_base+base_image.get_width(),y_base))
 
@@ -219,7 +219,7 @@ def out_menu(screen,score,bird,base):
         base_img,x_base,y_base=base.move()
         bird.fliping_animation()
         screen.blit(bg_image,(0,0))
-        screen.blit(bird.img,(bird.x,bird.y))
+        screen.blit(bird.img,((screen_width/2)-bird_position_offset,screen_height/2))
         screen.blit(base_img,(x_base,y_base))
         screen.blit(base_img,(x_base+base_image.get_width(),y_base))
 
@@ -248,6 +248,5 @@ def main():
     start_menu(screen,bird,base)
     score = game_loop(screen,score,bird,pipe,base)
     out_menu(screen,score,bird,base)
-                
 
 main()
