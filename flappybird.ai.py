@@ -50,7 +50,7 @@ class Flappy_Bird:
         
         self.img_index += 1
         if self.img_index == 30 : self.img_index = 0
-        self.img = bird_img[self.img_index//10]
+        self.img = bird_img[self.img_index // 10]
     
     # make the bird move in y direction   
     def move(self): 
@@ -92,12 +92,12 @@ class Pipe:
         self.x = x
         self.velocity = -5
         self.pipe_gap = 200
-        self.upper_pipe_height = -random.randrange(Pipe.rand_range_min,Pipe.rand_range_max)
+        self.upper_pipe_height = -random.randrange(Pipe.rand_range_min, Pipe.rand_range_max)
         self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
         self.passed=False
         
     def move(self):
-        if self.x == -pipe_img.get_width() :
+        if self.x <= -pipe_img.get_width() :
             self.upper_pipe_height = -random.randrange(Pipe.rand_range_min,Pipe.rand_range_max)
             self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
             self.x += screen_width + pipe_img.get_width()
@@ -153,9 +153,11 @@ class Base:
     
     
 GENERATION = 0
+highest_score=0
+
 def main(genomes, config):
     
-    global GENERATION
+    global GENERATION, highest_score
     GENERATION += 1
     screen = pygame.display.set_mode((screen_width,screen_height))
     pygame.display.set_caption("Flappy Bird")
@@ -165,7 +167,7 @@ def main(genomes, config):
     birds = list()
     pipe = Pipe(screen_width)
     base = Base()
-
+    
     for _, g in genomes:
         
         net = neat.nn.FeedForwardNetwork.create(g, config)
@@ -176,17 +178,16 @@ def main(genomes, config):
     
     score = 0
     
-    clock=pygame.time.Clock()    
     
     running = True
     while running:
         
-        clock.tick(FRAMERATE)
 
         screen.blit(bg_image,(0,0))
         game_score = font.render(f"Score: {score}", True, white)
         alive = font.render(f"Birds Alive: {len(birds)}",True, white)
         gen = font.render(f"Generation: {GENERATION}",True,white)
+        high_score = font.render(f"Highest Score: {highest_score}",True,white)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -199,7 +200,7 @@ def main(genomes, config):
 
         for x, bird in enumerate(birds):
             
-            ge[x].fitness += 0.1
+            ge[x].fitness += 0.05
             
             bird_img,x_bird,y_bird = bird.move()
             screen.blit(bird_img,(x_bird,y_bird))
@@ -234,9 +235,13 @@ def main(genomes, config):
         screen.blit(game_score,(screen_width - 3.2*font_size,10))
         screen.blit(alive,(0.5 * font_size,10))
         screen.blit(gen,(0.5 * font_size,50))
+        screen.blit(high_score,(screen_width - 5.9 * font_size,50))
         
         pygame.display.update()
-        
+    
+        if score > highest_score:
+            highest_score = score
+    
 
 
 def run(config_path):
