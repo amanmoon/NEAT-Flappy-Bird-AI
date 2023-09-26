@@ -2,11 +2,10 @@ import pygame
 import random
 import os
 import neat
-
 pygame.init()
 
 # Initialise Constants
-screen_width = 576
+screen_width = 976
 screen_height = 1024
 bird_position_offset = 50
 font_size = 50
@@ -29,7 +28,7 @@ white = (255, 255, 255)
 # Bird Class
 class Flappy_Bird:
     
-    def __init__(self,x = (screen_width / 2)-bird_position_offset,y = screen_height / 2):
+    def __init__(self,x=(screen_width/2)-bird_position_offset,y=screen_height/2):
         
         self.velocity = 0
         self.x = x
@@ -51,7 +50,7 @@ class Flappy_Bird:
         
         self.img_index += 1
         if self.img_index == 30 : self.img_index = 0
-        self.img = bird_img[self.img_index//10]
+        self.img = bird_img[self.img_index // 10]
     
     # make the bird move in y direction   
     def move(self): 
@@ -85,30 +84,39 @@ class Flappy_Bird:
     
 class Pipe:
     
-    rand_range_min = 100
+    rand_range_min = 150
     rand_range_max = 600
 
-    def __init__(self):
-        self.x = screen_width
+    def __init__(self,x):
+        
+        self.x = x
         self.velocity = -5
-        self.pipe_gap = 170
-        self.upper_pipe_height = -random.randrange(Pipe.rand_range_min,Pipe.rand_range_max)
+        self.pipe_gap = 200
+        self.upper_pipe_height = -random.randrange(Pipe.rand_range_min, Pipe.rand_range_max)
         self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
+        self.passed=False
         
     def move(self):
-        if self.x == -pipe_img.get_width():
+        if self.x <= -pipe_img.get_width() :
             self.upper_pipe_height = -random.randrange(Pipe.rand_range_min,Pipe.rand_range_max)
             self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
-            self.x = screen_width
-        self.inverted_pipe_img = pygame.transform.flip(pipe_img,False,True)
+            self.x += screen_width + pipe_img.get_width()
+            
+        self.pipe_img=pipe_img
+        self.inverted_pipe_img = pygame.transform.flip(pipe_img, False, True)
         self.x += self.velocity
         
-        return pipe_img,self.inverted_pipe_img,self.x
+        return self.pipe_img,self.inverted_pipe_img,self.x
+    
+    def pipe_passed(self,bird):
+        if self.x < bird.x:
+            self.passed = True
+            
     
     def colide(self,bird):
         bird_mask = bird.get_mask()
         top_pipe_mask = pygame.mask.from_surface(self.inverted_pipe_img)
-        bottom_pipe_mask = pygame.mask.from_surface(pipe_img)
+        bottom_pipe_mask = pygame.mask.from_surface(self.pipe_img)
         top_offset = (self.x - bird.x,self.upper_pipe_height - bird.height)
         bottom_offset = (self.x - bird.x,self.lower_pipe_height - bird.height      )
         
@@ -144,13 +152,12 @@ class Base:
         
     
     
-    
-    
-    
 GENERATION = 0
+highest_score=0
+
 def main(genomes, config):
     
-    global GENERATION
+    global GENERATION, highest_score
     GENERATION += 1
     screen = pygame.display.set_mode((screen_width,screen_height))
     pygame.display.set_caption("Flappy Bird")
@@ -158,9 +165,9 @@ def main(genomes, config):
     nets = list()
     ge = list()
     birds = list()
-    pipe = Pipe()
+    pipe = Pipe(screen_width)
     base = Base()
-
+    
     for _, g in genomes:
         
         net = neat.nn.FeedForwardNetwork.create(g, config)
@@ -171,14 +178,17 @@ def main(genomes, config):
     
     score = 0
     
-    clock=pygame.time.Clock()    
     
     running = True
     while running:
-        clock.tick(FRAMERATE)
+        
+
+        screen.blit(bg_image,(0,0))
         game_score = font.render(f"Score: {score}", True, white)
         alive = font.render(f"Birds Alive: {len(birds)}",True, white)
         gen = font.render(f"Generation: {GENERATION}",True,white)
+        high_score = font.render(f"Highest Score: {highest_score}",True,white)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -190,7 +200,7 @@ def main(genomes, config):
 
         for x, bird in enumerate(birds):
             
-            ge[x].fitness += 0.1
+            ge[x].fitness += 0.05
             
             bird_img,x_bird,y_bird = bird.move()
             screen.blit(bird_img,(x_bird,y_bird))
@@ -199,7 +209,6 @@ def main(genomes, config):
 
             if output[0] > 0.5:
                 bird.flap()
-                
         
         for x, bird in enumerate(birds):
             
@@ -211,6 +220,7 @@ def main(genomes, config):
                 
             elif pipe.score(bird):
                 ge[x].fitness += 5
+                
         if len(birds) == 0:
             running = False
             break
@@ -221,11 +231,17 @@ def main(genomes, config):
         
         screen.blit(base_img,(x_base,y_base))
         screen.blit(base_img,(x_base + base_image.get_width(),y_base))
+        screen.blit(base_img,(x_base + 2 * base_image.get_width(),y_base))
         screen.blit(game_score,(screen_width - 3.2*font_size,10))
         screen.blit(alive,(0.5 * font_size,10))
         screen.blit(gen,(0.5 * font_size,50))
+        screen.blit(high_score,(screen_width - 5.9 * font_size,50))
+        
         pygame.display.update()
-        screen.blit(bg_image,(0,0))
+    
+        if score > highest_score:
+            highest_score = score
+    
 
 
 def run(config_path):
