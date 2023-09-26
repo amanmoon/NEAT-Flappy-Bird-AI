@@ -89,7 +89,7 @@ class Pipe:
     def __init__(self):
         self.x = screen_width
         self.velocity = -5
-        self.pipe_gap = 170
+        self.pipe_gap = 200
         self.upper_pipe_height = -random.randrange(Pipe.rand_range_min,Pipe.rand_range_max)
         self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
         
