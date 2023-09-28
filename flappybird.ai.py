@@ -11,7 +11,7 @@ bird_position_offset = 50
 font_size = 50
 
 # Framerate
-FRAMERATE = 120
+FRAMERATE = 1
 
 # Loading Images
 bird_img = [ pygame.transform.scale2x(pygame.image.load("asset/bird1.png")),
@@ -37,7 +37,7 @@ class Flappy_Bird:
         self.time = 0
         self.height = self.y
         self.img = bird_img[0]
-        
+        self.final_velocity=None
     # make the bird jump
     def flap(self):
         
@@ -61,7 +61,7 @@ class Flappy_Bird:
         # equations
         s = self.velocity * self.time + 15 * (self.time) ** 2
         velocity = self.velocity + 20 * (self.time)
-       
+        self.final_velocity = velocity
         self.height = self.y + s
         
         # the flapping animation
@@ -91,7 +91,7 @@ class Pipe:
         
         self.x = x
         self.velocity = -5
-        self.pipe_gap = 170
+        self.pipe_gap = 160
         self.upper_pipe_height = -random.randrange(Pipe.rand_range_min, Pipe.rand_range_max)
         self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
         self.passed=False
@@ -110,7 +110,7 @@ class Pipe:
         return self.pipe_img,self.inverted_pipe_img,self.x
     
     def pipe_passed(self,bird):
-        if self.x < bird.x - bird.img.get_width():
+        if self.x < bird.x - pipe_img.get_width():
             self.passed = True
             
     
@@ -128,12 +128,11 @@ class Pipe:
             return True
         return False
     
-    def score(self,bird):
-        if bird.x ==  self.x + pipe_img.get_width() - 2:
+    def score(self, bird):
+        if  self.x - 2 + pipe_img.get_width() == bird.x:
             return True
-        else:
-            return False
-        
+        return False
+
 class Base:
     
     def __init__(self):
@@ -154,11 +153,11 @@ class Base:
     
     
 GENERATION = 0
-highest_score=0
+highest_score = 0
 
 def main(genomes, config):
     
-    global GENERATION, highest_score
+    global GENERATION, highest_score, pipe_img
     GENERATION += 1
     screen = pygame.display.set_mode((screen_width,screen_height))
     pygame.display.set_caption("Flappy Bird")
@@ -166,7 +165,7 @@ def main(genomes, config):
     nets = list()
     ge = list()
     birds = list()
-    pipes = list((Pipe(screen_width),Pipe(1.5 * screen_width)))
+    pipes = list((Pipe(screen_width),Pipe(1.5 * screen_width + pipe_img.get_width() / 2)))
     pipe = pipes[0]
     base = Base()
     
@@ -195,9 +194,9 @@ def main(genomes, config):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        if pipes[0].passed and not pipes[1].passed:
+        if pipes[0].passed and not pipes[1].passed and pipe == pipes[0]:
             pipe = pipes[1]
-        elif not pipes[0].passed and pipes[1].passed:
+        elif not pipes[0].passed and pipes[1].passed and pipe == pipes[1]:
             pipe = pipes[0]
         
         for p in pipes:
@@ -207,20 +206,19 @@ def main(genomes, config):
             screen.blit(pipe_img,(x_pipe,p.lower_pipe_height))
 
         
-
-        
         for x, bird in enumerate(birds):
             
-            ge[x].fitness += 0.05
+            ge[x].fitness += 0.01
             
             bird_img,x_bird,y_bird = bird.move()
             screen.blit(bird_img,(x_bird,y_bird))
             
-            output = nets[x].activate((pipe.x,bird.height,(pipe.upper_pipe_height + pipe_img.get_height()), (pipe.lower_pipe_height)))
+            output = nets[x].activate((pipe.x - bird.x - bird_img.get_width(),bird.height,bird.final_velocity,(pipe.upper_pipe_height + pipe_img.get_height() - bird.height), (bird.height - pipe.lower_pipe_height + bird.img.get_height())))
             
             if output[0] > 0.5:
                 bird.flap()
-        
+                
+
         for x, bird in enumerate(birds):
             
             if pipe.colide(bird) or base.colide(bird):
@@ -229,9 +227,11 @@ def main(genomes, config):
                 nets.pop(x)
                 ge.pop(x)
                 
-            elif pipe.score(bird):
-                ge[x].fitness += 5
-                
+            else:
+                for p in pipes:
+                    if p.score(bird):
+                        ge[x].fitness += 5
+
         if len(birds) == 0:
             running = False
             break
