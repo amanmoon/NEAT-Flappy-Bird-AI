@@ -91,7 +91,7 @@ class Pipe:
         
         self.x = x
         self.velocity = -5
-        self.pipe_gap = 200
+        self.pipe_gap = 170
         self.upper_pipe_height = -random.randrange(Pipe.rand_range_min, Pipe.rand_range_max)
         self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
         self.passed=False
@@ -101,6 +101,7 @@ class Pipe:
             self.upper_pipe_height = -random.randrange(Pipe.rand_range_min,Pipe.rand_range_max)
             self.lower_pipe_height = (pipe_img.get_height()) + (self.upper_pipe_height) + (self.pipe_gap)
             self.x += screen_width + pipe_img.get_width()
+            self.passed = False
             
         self.pipe_img=pipe_img
         self.inverted_pipe_img = pygame.transform.flip(pipe_img, False, True)
@@ -109,7 +110,7 @@ class Pipe:
         return self.pipe_img,self.inverted_pipe_img,self.x
     
     def pipe_passed(self,bird):
-        if self.x < bird.x:
+        if self.x < bird.x - bird.img.get_width():
             self.passed = True
             
     
@@ -165,7 +166,8 @@ def main(genomes, config):
     nets = list()
     ge = list()
     birds = list()
-    pipe = Pipe(screen_width)
+    pipes = list((Pipe(screen_width),Pipe(1.5 * screen_width)))
+    pipe = pipes[0]
     base = Base()
     
     for _, g in genomes:
@@ -181,8 +183,8 @@ def main(genomes, config):
     
     running = True
     while running:
+        pipe.pipe_passed(birds[0])
         
-
         screen.blit(bg_image,(0,0))
         game_score = font.render(f"Score: {score}", True, white)
         alive = font.render(f"Birds Alive: {len(birds)}",True, white)
@@ -193,11 +195,20 @@ def main(genomes, config):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+        if pipes[0].passed and not pipes[1].passed:
+            pipe = pipes[1]
+        elif not pipes[0].passed and pipes[1].passed:
+            pipe = pipes[0]
         
-        pipe_img,inverted_pipe_img,x_pipe = pipe.move()
-        screen.blit(inverted_pipe_img,(x_pipe,pipe.upper_pipe_height))
-        screen.blit(pipe_img,(x_pipe,pipe.lower_pipe_height))
+        for p in pipes:
+            
+            pipe_img,inverted_pipe_img,x_pipe = p.move()
+            screen.blit(inverted_pipe_img,(x_pipe,p.upper_pipe_height))
+            screen.blit(pipe_img,(x_pipe,p.lower_pipe_height))
 
+        
+
+        
         for x, bird in enumerate(birds):
             
             ge[x].fitness += 0.05
@@ -205,8 +216,8 @@ def main(genomes, config):
             bird_img,x_bird,y_bird = bird.move()
             screen.blit(bird_img,(x_bird,y_bird))
             
-            output = nets[x].activate((bird.height,(pipe.upper_pipe_height + pipe_img.get_height()), (pipe.lower_pipe_height)))
-
+            output = nets[x].activate((pipe.x,bird.height,(pipe.upper_pipe_height + pipe_img.get_height()), (pipe.lower_pipe_height)))
+            
             if output[0] > 0.5:
                 bird.flap()
         

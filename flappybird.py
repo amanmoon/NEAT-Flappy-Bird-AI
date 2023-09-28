@@ -9,7 +9,7 @@ screen_height = 1024
 bird_position_offset = 50
 font_size = 50
 
-# Framerate
+ # Framerate
 FRAMERATE = 60
 
 # Loading Images
